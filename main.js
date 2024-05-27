@@ -1,11 +1,15 @@
 const canvas = document.getElementById("drawing");
 const ctx = canvas.getContext("2d");
 
-let baseReal = -0.9;
-let baseImaginary = 0.27015;
+const baseRealInput = document.getElementById("baseReal");
+const baseImaginaryInput = document.getElementById("baseImaginary");
+const maxIterationsInput = document.getElementById("maxIterations");
+
+let baseReal = parseFloat(baseRealInput.value);
+let baseImaginary = parseFloat(baseImaginaryInput.value);
 let cReal = baseReal;
 let cImaginary = baseImaginary;
-const maxIterations = 100;
+let maxIterations = parseInt(maxIterationsInput.value);
 
 let animationFrameId;
 let time = 0;
@@ -66,11 +70,21 @@ function update() {
   drawJuliaSet();
 }
 
-const toggleButton = document.getElementById("toggleButton");
-toggleButton.addEventListener("click", () => {
+document.getElementById("confirmButton").addEventListener("click", () => {
+  baseReal = parseFloat(baseRealInput.value);
+  baseImaginary = parseFloat(baseImaginaryInput.value);
+  cReal = baseReal;
+  cImaginary = baseImaginary;
+  maxIterations = parseInt(maxIterationsInput.value);
+  drawJuliaSet();
+});
+
+document.getElementById("toggleButton").addEventListener("click", () => {
   animationActive = !animationActive;
   if (animationActive) {
     drawJuliaSet();
+  } else {
+    cancelAnimationFrame(animationFrameId);
   }
 });
 
@@ -82,4 +96,3 @@ window.addEventListener("resize", () => {
 
 resizeCanvas();
 drawJuliaSet();
-

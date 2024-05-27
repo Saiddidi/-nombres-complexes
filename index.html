@@ -4,13 +4,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exam Countdown</title>
+    <title>Julia Set</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+    <div class="controls">
+        <label for="baseReal">Base Real:</label>
+        <input type="number" id="baseReal" step="0.01" value="0.355">
+        <label for="baseImaginary">Base Imaginary:</label>
+        <input type="number" id="baseImaginary" step="0.01" value="0.355">
+        <label for="maxIterations">Max Iterations:</label>
+        <input type="number" id="maxIterations" value="100">
+        <button id="confirmButton">Confirm</button>
+        <button id="toggleButton">Toggle Animation</button>
+    </div>
     <canvas id="drawing"></canvas>
-    <button id="toggleButton">Toggle Animation</button>
     <script src="main.js"></script>
 </body>
 
