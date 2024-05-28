@@ -4,22 +4,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Julia Set</title>
+    <title>Julia Set Fractal Generator</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div class="controls">
+    <button id="menuToggle" class="menu-toggle">☰</button>
+    <div class="controls" id="controls">
         <label for="baseReal">Base Real:</label>
-        <input type="text" id="baseReal" step="0.01" value="0.355">
+        <input type="number" id="baseReal" step="0.01" value=".7" min="-1" max="1">
         <label for="baseImaginary">Base Imaginary:</label>
-        <input type="text" id="baseImaginary" step="0.01" value="0.355">
+        <input type="number" id="baseImaginary" step="0.01" value="-0.8" min="-1" max="1">
         <label for="maxIterations">Max Iterations:</label>
-        <input type="text" id="maxIterations" value="100">
-        <button id="confirmButton">Confirm</button>
-        <button id="toggleButton">Toggle Animation</button>
+        <input type="number" id="maxIterations" value="100" min="1">
+        <button id="colorToggleButton">Toggle Color</button>
+        <button id="zoomInButton">Zoom In</button>
+        <button id="zoomOutButton">Zoom Out</button>
+        <button id="resetButton">Reset</button>
+        <button id="saveImageButton">Save Image</button>
     </div>
     <canvas id="drawing"></canvas>
+    <div id="infoPanel" class="info-panel hidden">
+        <h2>Fractal Information</h2>
+        <p id="fractalInfo">Hover over the fractal to see coordinates and values.</p>
+    </div>
     <script src="main.js"></script>
 </body>
 

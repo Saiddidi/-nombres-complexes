@@ -10,10 +10,14 @@ let baseImaginary = parseFloat(baseImaginaryInput.value);
 let cReal = baseReal;
 let cImaginary = baseImaginary;
 let maxIterations = parseInt(maxIterationsInput.value);
+let useColor = false;
 
-let animationFrameId;
-let time = 0;
-let animationActive = true;
+let zoomLevel = 1;
+let offsetX = 0;
+let offsetY = 0;
+let isDragging = false;
+let lastX = 0;
+let lastY = 0;
 
 function resizeCanvas() {
   canvas.width = window.innerWidth;
@@ -29,8 +33,8 @@ function drawJuliaSet() {
 
   for (let x = 0; x < width; x++) {
     for (let y = 0; y < height; y++) {
-      const zx = (x - width / 2) / (width / 4);
-      const zy = (y - height / 2) / (height / 4);
+      const zx = (x - width / 2 + offsetX) / ((width / 4) * zoomLevel);
+      const zy = (y - height / 2 + offsetY) / ((height / 4) * zoomLevel);
       let zr = zx;
       let zi = zy;
 
@@ -44,55 +48,114 @@ function drawJuliaSet() {
         iterations++;
       }
 
-      const brightness = (iterations / maxIterations) * 255;
       const index = (x + y * width) * 4;
-      data[index] = brightness;
-      data[index + 1] = brightness;
-      data[index + 2] = brightness;
+      if (useColor) {
+        if (iterations === maxIterations) {
+          data[index] = data[index + 1] = data[index + 2] = 0;
+        } else {
+          const hue = Math.floor((360 * iterations) / maxIterations);
+          const [r, g, b] = hsvToRgb(hue, 1, 1);
+          data[index] = r;
+          data[index + 1] = g;
+          data[index + 2] = b;
+        }
+      } else {
+        const brightness = (iterations / maxIterations) * 255;
+        data[index] = data[index + 1] = data[index + 2] = brightness;
+      }
       data[index + 3] = 255;
     }
   }
 
   ctx.putImageData(imageData, 0, 0);
-
-  if (animationActive) {
-    animationFrameId = requestAnimationFrame(update);
-  } else {
-    cancelAnimationFrame(animationFrameId);
-  }
 }
 
-function update() {
-  time += 0.05; // Faster animation
-  cReal = baseReal + Math.sin(time) * 0.05;
-  cImaginary = baseImaginary + Math.cos(time) * 0.05;
-
-  drawJuliaSet();
+function hsvToRgb(h, s, v) {
+  let f = (n, k = (n + h / 60) % 6) =>
+    v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
+  return [f(5) * 255, f(3) * 255, f(1) * 255];
 }
 
-document.getElementById("confirmButton").addEventListener("click", () => {
+function updateParametersAndDraw() {
   baseReal = parseFloat(baseRealInput.value);
   baseImaginary = parseFloat(baseImaginaryInput.value);
   cReal = baseReal;
   cImaginary = baseImaginary;
   maxIterations = parseInt(maxIterationsInput.value);
   drawJuliaSet();
+}
+
+function toggleColorMode() {
+  useColor = !useColor;
+  drawJuliaSet();
+}
+
+function zoomIn() {
+  zoomLevel *= 1.1; // Increase zoom level by 10%
+  drawJuliaSet();
+}
+
+function zoomOut() {
+  zoomLevel /= 1.1; // Decrease zoom level by 10%
+  drawJuliaSet();
+}
+
+function resetZoom() {
+  zoomLevel = 1;
+  offsetX = 0;
+  offsetY = 0;
+  drawJuliaSet();
+}
+
+function saveImage() {
+  const link = document.createElement("a");
+  link.href = canvas.toDataURL("image/png");
+  link.download = "fractal.png";
+  link.click();
+}
+
+baseRealInput.addEventListener("input", updateParametersAndDraw);
+baseImaginaryInput.addEventListener("input", updateParametersAndDraw);
+maxIterationsInput.addEventListener("input", updateParametersAndDraw);
+document
+  .getElementById("colorToggleButton")
+  .addEventListener("click", toggleColorMode);
+document.getElementById("zoomInButton").addEventListener("click", zoomIn);
+document.getElementById("zoomOutButton").addEventListener("click", zoomOut);
+document.getElementById("resetButton").addEventListener("click", resetZoom);
+document.getElementById("saveImageButton").addEventListener("click", saveImage);
+
+canvas.addEventListener("mousedown", (event) => {
+  isDragging = true;
+  lastX = event.clientX;
+  lastY = event.clientY;
 });
 
-document.getElementById("toggleButton").addEventListener("click", () => {
-  animationActive = !animationActive;
-  if (animationActive) {
+canvas.addEventListener("mousemove", (event) => {
+  if (isDragging) {
+    const deltaX = event.clientX - lastX;
+    const deltaY = event.clientY - lastY;
+    offsetX += deltaX;
+    offsetY += deltaY;
+    lastX = event.clientX;
+    lastY = event.clientY;
     drawJuliaSet();
-  } else {
-    cancelAnimationFrame(animationFrameId);
   }
+});
+
+canvas.addEventListener("mouseup", () => {
+  isDragging = false;
 });
 
 let resizeTimeout;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(resizeCanvas, 250); // Improved responsiveness
+  resizeTimeout = setTimeout(resizeCanvas, 250);
 });
 
 resizeCanvas();
-drawJuliaSet();
+
+document.getElementById("menuToggle").addEventListener("click", function () {
+  const controls = document.getElementById("controls");
+  controls.classList.toggle("show");
+});
