@@ -24,11 +24,54 @@ function resizeCanvas() {
 }
 
 function drawJuliaSet() {
-  // Your existing fractal drawing code goes here
+  const width = canvas.width;
+  const height = canvas.height;
+  const imageData = ctx.createImageData(width, height);
+  const data = imageData.data;
+
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
+      const zx = (x - width / 2) / ((width / 4) * zoomLevel);
+      const zy = (y - height / 2) / ((height / 4) * zoomLevel);
+      let zr = zx;
+      let zi = zy;
+
+      let iterations = 0;
+      while (iterations < maxIterations) {
+        const zrNew = zr * zr - zi * zi + cReal;
+        const ziNew = 2 * zr * zi + cImaginary;
+        zr = zrNew;
+        zi = ziNew;
+        if (zr * zr + zi * zi > 4) break;
+        iterations++;
+      }
+
+      const index = (x + y * width) * 4;
+      if (useColor) {
+        if (iterations === maxIterations) {
+          data[index] = data[index + 1] = data[index + 2] = 0;
+        } else {
+          const hue = Math.floor((360 * iterations) / maxIterations);
+          const [r, g, b] = hsvToRgb(hue, 1, 1);
+          data[index] = r;
+          data[index + 1] = g;
+          data[index + 2] = b;
+        }
+      } else {
+        const brightness = (iterations / maxIterations) * 255;
+        data[index] = data[index + 1] = data[index + 2] = brightness;
+      }
+      data[index + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
 }
 
 function hsvToRgb(h, s, v) {
-  // Your existing HSV to RGB conversion code goes here
+  let f = (n, k = (n + h / 60) % 6) =>
+    v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
+  return [f(5) * 255, f(3) * 255, f(1) * 255];
 }
 
 function updateParametersAndDraw() {
@@ -147,4 +190,5 @@ document.getElementById("menuToggle").addEventListener("click", function () {
   const controls = document.getElementById("controls");
   controls.classList.toggle("show");
 });
+
 
