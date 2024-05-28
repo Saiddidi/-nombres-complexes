@@ -1,13 +1,10 @@
-// Get the canvas element and its 2D rendering context
 const canvas = document.getElementById("drawing");
 const ctx = canvas.getContext("2d");
 
-// Get input elements for base values and max iterations
 const baseRealInput = document.getElementById("baseReal");
 const baseImaginaryInput = document.getElementById("baseImaginary");
 const maxIterationsInput = document.getElementById("maxIterations");
 
-// Initialize variables for Julia Set parameters
 let baseReal = parseFloat(baseRealInput.value);
 let baseImaginary = parseFloat(baseImaginaryInput.value);
 let cReal = baseReal;
@@ -15,26 +12,22 @@ let cImaginary = baseImaginary;
 let maxIterations = parseInt(maxIterationsInput.value);
 let useColor = false;
 
-// Initialize zoom-related variables
 let zoomLevel = 1;
-let targetZoomLevel = zoomLevel;
-let zoomSpeed = 0.1;
-
-// Initialize center coordinates and dragging state variables
-let centerX = 0;
+let centerX = 0; // Initial center coordinates
 let centerY = 0;
+
 let isDragging = false;
 let lastX = 0;
 let lastY = 0;
 
-// Function to resize the canvas based on window size
+let initialDistance = 0;
+
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
-  drawJuliaSet(); // Redraw Julia Set after resizing
+  drawJuliaSet();
 }
 
-// Function to draw the Julia Set fractal
 function drawJuliaSet() {
   const width = canvas.width;
   const height = canvas.height;
@@ -43,7 +36,6 @@ function drawJuliaSet() {
 
   for (let x = 0; x < width; x++) {
     for (let y = 0; y < height; y++) {
-      // Calculate complex numbers based on zoom and center
       const zx = (x - width / 2 + centerX) / ((width / 4) * zoomLevel);
       const zy = (y - height / 2 + centerY) / ((height / 4) * zoomLevel);
       let zr = zx;
@@ -51,18 +43,16 @@ function drawJuliaSet() {
 
       let iterations = 0;
       while (iterations < maxIterations) {
-        // Julia Set algorithm iteration
         const zrNew = zr * zr - zi * zi + cReal;
         const ziNew = 2 * zr * zi + cImaginary;
         zr = zrNew;
         zi = ziNew;
-        if (zr * zr + zi * zi > 4) break; // Escape condition
+        if (zr * zr + zi * zi > 4) break;
         iterations++;
       }
 
       const index = (x + y * width) * 4;
       if (useColor) {
-        // Coloring based on iteration count
         if (iterations === maxIterations) {
           data[index] = data[index + 1] = data[index + 2] = 0;
         } else {
@@ -73,25 +63,24 @@ function drawJuliaSet() {
           data[index + 2] = b;
         }
       } else {
-        // Grayscale coloring based on iteration count
         const brightness = (iterations / maxIterations) * 255;
-        data[index] = data[index + 1] = data[index + 2] = brightness;
+        data[index] = brightness;
+        data[index + 1] = brightness;
+        data[index + 2] = brightness;
       }
-      data[index + 3] = 255; // Alpha channel
+      data[index + 3] = 255;
     }
   }
 
-  ctx.putImageData(imageData, 0, 0); // Draw the image data onto the canvas
+  ctx.putImageData(imageData, 0, 0);
 }
 
-// Convert HSV color to RGB color
 function hsvToRgb(h, s, v) {
   let f = (n, k = (n + h / 60) % 6) =>
     v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
   return [f(5) * 255, f(3) * 255, f(1) * 255];
 }
 
-// Update parameters and redraw Julia Set
 function updateParametersAndDraw() {
   baseReal = parseFloat(baseRealInput.value);
   baseImaginary = parseFloat(baseImaginaryInput.value);
@@ -101,48 +90,26 @@ function updateParametersAndDraw() {
   drawJuliaSet();
 }
 
-// Toggle between color and grayscale modes
 function toggleColorMode() {
   useColor = !useColor;
   drawJuliaSet();
 }
 
-// Smooth zooming function
-function smoothZoom(newZoomLevel) {
-  const frames = 10;
-  const deltaZoom = (newZoomLevel - zoomLevel) / frames;
-  let currentFrame = 0;
-
-  function animateZoom() {
-    zoomLevel += deltaZoom;
-    drawJuliaSet();
-    currentFrame++;
-    if (currentFrame < frames) {
-      requestAnimationFrame(animateZoom);
-    } else {
-      zoomLevel = newZoomLevel;
-    }
-  }
-
-  animateZoom();
-}
-
-// Zoom functions
 function zoomIn() {
-  const newZoomLevel = zoomLevel * 1.1;
-  smoothZoom(newZoomLevel);
+  zoomLevel *= 1.1; // Increase zoom level by 10%
+  drawJuliaSet();
 }
 
 function zoomOut() {
-  const newZoomLevel = zoomLevel / 1.1;
-  smoothZoom(newZoomLevel);
+  zoomLevel /= 1.1; // Decrease zoom level by 10%
+  drawJuliaSet();
 }
 
 function resetZoom() {
-  smoothZoom(1);
+  zoomLevel = 1;
+  drawJuliaSet();
 }
 
-// Save the canvas image as a PNG file
 function saveImage() {
   const link = document.createElement("a");
   link.href = canvas.toDataURL("image/png");
@@ -150,34 +117,112 @@ function saveImage() {
   link.click();
 }
 
-// Event listeners for mouse and touch interactions
-// (Omitted for brevity, but they handle dragging, zooming, and touch gestures)
+function handleMouseDown(e) {
+  isDragging = true;
+  lastX = e.clientX;
+  lastY = e.clientY;
+}
 
-// Event listener for input changes to update parameters and redraw
-baseRealInput.addEventListener("input", updateParametersAndDraw);
-baseImaginaryInput.addEventListener("input", updateParametersAndDraw);
-maxIterationsInput.addEventListener("input", updateParametersAndDraw);
+function handleMouseMove(e) {
+  if (isDragging) {
+    const deltaX = e.clientX - lastX;
+    const deltaY = e.clientY - lastY;
+    centerX += deltaX;
+    centerY += deltaY;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    drawJuliaSet();
+  }
+}
 
-// Event listeners for UI buttons
-document
-  .getElementById("colorToggleButton")
-  .addEventListener("click", toggleColorMode);
-document.getElementById("zoomInButton").addEventListener("click", zoomIn);
-document.getElementById("zoomOutButton").addEventListener("click", zoomOut);
-document.getElementById("resetButton").addEventListener("click", resetZoom);
-document.getElementById("saveImageButton").addEventListener("click", saveImage);
+function handleMouseUp() {
+  isDragging = false;
+}
 
-// Resize canvas when the window is resized
-let resizeTimeout;
-window.addEventListener("resize", () => {
-  clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(resizeCanvas, 250);
-});
+function handleTouchStart(e) {
+  if (e.touches.length === 1) {
+    const touch = e.touches[0];
+    isDragging = true;
+    lastX = touch.clientX;
+    lastY = touch.clientY;
+  } else if (e.touches.length === 2) {
+    const touch1 = e.touches[0];
+    const touch2 = e.touches[1];
+    initialDistance = Math.sqrt(
+      Math.pow(touch1.clientX - touch2.clientX, 2) +
+        Math.pow(touch1.clientY - touch2.clientY, 2)
+    );
+  }
+}
 
-resizeCanvas(); // Initial canvas resize
+function handleTouchMove(e) {
+  if (isDragging && e.touches.length === 1) {
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - lastX;
+    const deltaY = touch.clientY - lastY;
+    centerX += deltaX;
+    centerY += deltaY;
+    lastX = touch.clientX;
+    lastY = touch.clientY;
+    drawJuliaSet();
+    e.preventDefault(); // Prevent scrolling on touch devices
+  } else if (e.touches.length === 2) {
+    const touch1 = e.touches[0];
+    const touch2 = e.touches[1];
+    const distance = Math.sqrt(
+      Math.pow(touch1.clientX - touch2.clientX, 2) +
+        Math.pow(touch1.clientY - touch2.clientY, 2)
+    );
+    const scaleChange = distance / initialDistance;
+    zoomLevel *= scaleChange;
+    drawJuliaSet();
+  }
+}
 
-// Show/hide controls menu toggle
-document.getElementById("menuToggle").addEventListener("click", function () {
-  const controls = document.getElementById("controls");
-  controls.classList.toggle("show");
-});
+function handleTouchEnd() {
+  isDragging = false;
+}
+
+function setupEventListeners() {
+  canvas.addEventListener("mousedown", handleMouseDown);
+  canvas.addEventListener("mousemove", handleMouseMove);
+  canvas.addEventListener("mouseup", handleMouseUp);
+  canvas.addEventListener("mouseleave", handleMouseUp);
+
+  canvas.addEventListener("touchstart", handleTouchStart);
+  canvas.addEventListener("touchmove", handleTouchMove);
+  canvas.addEventListener("touchend", handleTouchEnd);
+  canvas.addEventListener("touchcancel", handleTouchEnd);
+
+  baseRealInput.addEventListener("input", updateParametersAndDraw);
+  baseImaginaryInput.addEventListener("input", updateParametersAndDraw);
+  maxIterationsInput.addEventListener("input", updateParametersAndDraw);
+  document
+    .getElementById("colorToggleButton")
+    .addEventListener("click", toggleColorMode);
+  document.getElementById("zoomInButton").addEventListener("click", zoomIn);
+  document.getElementById("zoomOutButton").addEventListener("click", zoomOut);
+  document.getElementById("resetButton").addEventListener("click", resetZoom);
+  document
+    .getElementById("saveImageButton")
+    .addEventListener("click", saveImage);
+
+  let resizeTimeout;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(resizeCanvas, 250);
+  });
+
+  document.getElementById("menuToggle").addEventListener("click", function () {
+    const controls = document.getElementById("controls");
+    controls.classList.toggle("show");
+  });
+}
+
+function init() {
+  resizeCanvas();
+  setupEventListeners();
+  drawJuliaSet();
+}
+
+init();
