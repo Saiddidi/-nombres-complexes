@@ -13,6 +13,9 @@ let maxIterations = parseInt(maxIterationsInput.value);
 let useColor = false;
 
 let zoomLevel = 1;
+let centerX = 0; // Initial center coordinates
+let centerY = 0;
+
 let isDragging = false;
 let lastX = 0;
 let lastY = 0;
@@ -31,8 +34,8 @@ function drawJuliaSet() {
 
   for (let x = 0; x < width; x++) {
     for (let y = 0; y < height; y++) {
-      const zx = (x - width / 2) / ((width / 4) * zoomLevel);
-      const zy = (y - height / 2) / ((height / 4) * zoomLevel);
+      const zx = (x - width / 2 + centerX) / ((width / 4) * zoomLevel);
+      const zy = (y - height / 2 + centerY) / ((height / 4) * zoomLevel);
       let zr = zx;
       let zi = zy;
 
@@ -110,53 +113,74 @@ function saveImage() {
   link.click();
 }
 
-function handleMouseDown(event) {
+function handleMouseDown(e) {
   isDragging = true;
-  lastX = event.clientX;
-  lastY = event.clientY;
+  lastX = e.clientX;
+  lastY = e.clientY;
 }
 
-function handleMouseMove(event) {
+function handleMouseMove(e) {
   if (isDragging) {
-    const dx = event.clientX - lastX;
-    const dy = event.clientY - lastY;
-    lastX = event.clientX;
-    lastY = event.clientY;
-    canvas.style.cursor = "grabbing";
-    canvas.scrollLeft -= dx;
-    canvas.scrollTop -= dy;
+    const deltaX = e.clientX - lastX;
+    const deltaY = e.clientY - lastY;
+    centerX += deltaX;
+    centerY += deltaY;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    drawJuliaSet();
   }
 }
 
 function handleMouseUp() {
   isDragging = false;
-  canvas.style.cursor = "grab";
 }
 
-function handleTouchStart(event) {
-  if (event.touches.length === 1) {
+function handleTouchStart(e) {
+  if (e.touches.length === 1) {
+    const touch = e.touches[0];
     isDragging = true;
-    lastX = event.touches[0].clientX;
-    lastY = event.touches[0].clientY;
+    lastX = touch.clientX;
+    lastY = touch.clientY;
   }
 }
 
-function handleTouchMove(event) {
-  if (isDragging && event.touches.length === 1) {
-    const dx = event.touches[0].clientX - lastX;
-    const dy = event.touches[0].clientY - lastY;
-    lastX = event.touches[0].clientX;
-    lastY = event.touches[0].clientY;
-    canvas.style.cursor = "grabbing";
-    canvas.scrollLeft -= dx;
-    canvas.scrollTop -= dy;
+function handleTouchMove(e) {
+  if (isDragging && e.touches.length === 1) {
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - lastX;
+    const deltaY = touch.clientY - lastY;
+    centerX += deltaX;
+    centerY += deltaY;
+    lastX = touch.clientX;
+    lastY = touch.clientY;
+    drawJuliaSet();
+    e.preventDefault(); // Prevent scrolling on touch devices
+  } else if (e.touches.length === 2) {
+    const touch1 = e.touches[0];
+    const touch2 = e.touches[1];
+    const distance = Math.sqrt(
+      Math.pow(touch1.clientX - touch2.clientX, 2) +
+        Math.pow(touch1.clientY - touch2.clientY, 2)
+    );
+    const scaleChange = distance / initialDistance;
+    zoomLevel *= scaleChange;
+    drawJuliaSet();
   }
 }
 
 function handleTouchEnd() {
   isDragging = false;
-  canvas.style.cursor = "grab";
 }
+
+canvas.addEventListener("mousedown", handleMouseDown);
+canvas.addEventListener("mousemove", handleMouseMove);
+canvas.addEventListener("mouseup", handleMouseUp);
+canvas.addEventListener("mouseleave", handleMouseUp);
+
+canvas.addEventListener("touchstart", handleTouchStart);
+canvas.addEventListener("touchmove", handleTouchMove);
+canvas.addEventListener("touchend", handleTouchEnd);
+canvas.addEventListener("touchcancel", handleTouchEnd);
 
 baseRealInput.addEventListener("input", updateParametersAndDraw);
 baseImaginaryInput.addEventListener("input", updateParametersAndDraw);
@@ -168,15 +192,6 @@ document.getElementById("zoomInButton").addEventListener("click", zoomIn);
 document.getElementById("zoomOutButton").addEventListener("click", zoomOut);
 document.getElementById("resetButton").addEventListener("click", resetZoom);
 document.getElementById("saveImageButton").addEventListener("click", saveImage);
-
-canvas.addEventListener("mousedown", handleMouseDown);
-canvas.addEventListener("mousemove", handleMouseMove);
-canvas.addEventListener("mouseup", handleMouseUp);
-canvas.addEventListener("mouseleave", handleMouseUp);
-
-canvas.addEventListener("touchstart", handleTouchStart);
-canvas.addEventListener("touchmove", handleTouchMove);
-canvas.addEventListener("touchend", handleTouchEnd);
 
 let resizeTimeout;
 window.addEventListener("resize", () => {
@@ -190,5 +205,37 @@ document.getElementById("menuToggle").addEventListener("click", function () {
   const controls = document.getElementById("controls");
   controls.classList.toggle("show");
 });
+
+function handleTouchStart(e) {
+  if (e.touches.length === 1) {
+    const touch = e.touches[0];
+    isDragging = true;
+    lastX = touch.clientX;
+    lastY = touch.clientY;
+  }
+}
+
+function handleTouchMove(e) {
+  if (isDragging && e.touches.length === 1) {
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - lastX;
+    const deltaY = touch.clientY - lastY;
+    centerX += deltaX;
+    centerY += deltaY;
+    lastX = touch.clientX;
+    lastY = touch.clientY;
+    drawJuliaSet();
+    e.preventDefault(); // Prevent scrolling on touch devices
+  }
+}
+
+function handleTouchEnd() {
+  isDragging = false;
+}
+
+canvas.addEventListener("touchstart", handleTouchStart);
+canvas.addEventListener("touchmove", handleTouchMove);
+canvas.addEventListener("touchend", handleTouchEnd);
+canvas.addEventListener("touchcancel", handleTouchEnd);
 
 
