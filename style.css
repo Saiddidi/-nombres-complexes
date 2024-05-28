@@ -10,7 +10,7 @@ html {
   justify-content: center;
   align-items: center;
   background-color: #f0f0f0;
-  zoom: 1;
+  text-size-adjust: 100%;
 }
 
 /* Controls styling */
