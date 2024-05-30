@@ -111,10 +111,22 @@ function resetZoom() {
 }
 
 function saveImage() {
+  const originalWidth = canvas.width;
+  const originalHeight = canvas.height;
+
+  canvas.width = 1920;
+  canvas.height = 1080;
+
+  drawJuliaSet();
+
   const link = document.createElement("a");
   link.href = canvas.toDataURL("image/png");
   link.download = "fractal.png";
   link.click();
+
+  canvas.width = originalWidth;
+  canvas.height = originalHeight;
+  drawJuliaSet();
 }
 
 function handleMouseDown(e) {
